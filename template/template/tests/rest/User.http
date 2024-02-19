@@ -1,0 +1,105 @@
+### Good weather tests:
+
+### Get all users
+GET http://localhost:3000/users
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+> {%
+client.test("Get all users successfully", function() {
+client.assert(response.status === 200, "Expected response status to be 200");
+client.assert(Array.isArray(response.body), "Expected body to be an array");
+});
+%}
+
+### Get specific user by ID
+GET http://localhost:3000/users/1
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+> {%
+client.test("Get user by ID successfully", function() {
+client.assert(response.status === 200, "Expected response status to be 200");
+client.assert(typeof response.body === "object", "Expected body to be an object");
+client.assert(response.body.id === 1, "Expected user ID to be 1");
+});
+%}
+
+
+### Post a new user *aka create an account
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+"email": "postingausertesting@gmail.com",
+"password": "Testing1!"
+}
+
+> {%
+    client.test("Successful posting of an artwork 201", function() {
+        client.assert(response.status === 201, "Expected response status to be 201");
+    });
+%}
+
+### Bad Weather Tests:
+
+### Get a non-existent user by ID
+GET http://localhost:3000/users/9999
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+> {%
+client.test("Non-existent user should return 404", function() {
+client.assert(response.status === 404, "Expected response status to be 404");
+});
+%}
+
+
+
+### Try to get a specific user but unauthorized
+GET http://localhost:3000/users/2
+Content-Type: application/json
+
+
+> {%
+    client.test("Unauthorized user should return 401", function() {
+        client.assert(response.status === 401, "Expected response status to be 401");
+    });
+%}
+
+### Try to create a user with an already existing email
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+"email": "random@gmail.com",
+"password": "Testing1!"
+}
+
+> {%
+client.test("Creating a user with an existing email should return 400", function() {
+client.assert(response.status === 400, "Expected response status to be 400");
+client.assert(response.body.message === 'Email already exists', "Expected message to be 'Email already exists'");
+});
+%}
+
+
+### try to create a user with an empty password
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+"email": "dfejdejde@example.com",
+"password": ""
+}
+
+> {%
+client.test("Creating a user with an empty password should return 400", function() {
+client.assert(response.status === 400, "Expected response status to be 400");
+client.assert(response.body.message === 'Email and password are required', "Expected message to be 'Email and password are required'");
+});
+%}
+
+
+
+

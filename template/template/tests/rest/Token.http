@@ -1,0 +1,73 @@
+### Good Weather tests
+
+### log in as a normal user
+POST http://localhost:3000/tokens
+Content-Type: application/json
+
+{
+  "email": "gmailz@gmail.com",
+  "password": "Testing1!"
+}
+
+> {%
+    client.test("Create token successfully", function() {
+        client.assert(response.status === 201, "Expected response status to be 201");
+        client.assert(response.body.token, "Expected response to have a token");
+    });
+%}
+
+
+### log in as an admin
+POST http://localhost:3000/tokens
+Content-Type: application/json
+
+{
+  "email": "wows@gmail.com",
+  "password": "Testing1!"
+}
+
+> {%
+    client.test("Create token successfully", function() {
+        client.assert(response.status === 201, "Expected response status to be 201");
+        client.assert(response.body.token, "Expected response to have a token");
+    });
+%}
+
+### Bad Weather tests
+
+### Try to log in with non existent credentials
+POST http://localhost:3000/tokens
+Content-Type: application/json
+
+{
+  "email": "nonexistent@gmail.com",
+  "password": "NoSuchPassword1!"
+}
+
+> {%
+    client.test("Attempt to create token with invalid credentials should fail", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+        client.assert(response.body === 'No user found with that email.', "Expected error message to be 'No user found with that email.'");
+    });
+%}
+
+
+### Try to log in with missing credentials
+POST http://localhost:3000/tokens
+Content-Type: application/json
+
+{
+  "email": "",
+  "password": ""
+}
+
+> {%
+    client.test("Attempt to log in with missing credentials should fail", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+        client.assert(response.body.error === 'Email and password are required.', "Expected error message to be 'Email and password are required.'");
+    });
+%}
+
+
+
+

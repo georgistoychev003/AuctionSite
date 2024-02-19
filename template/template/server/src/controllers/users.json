@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "email": "test1@example.com",
+    "password": "$2b$10$Vb0wdNFx5YT3VbxtOktZr.9ucLoYV9Tn9cMcxZZ.4kvxLQx7Wub3.",
+    "isAdmin": false
+  },
+  {
+    "id": 2,
+    "email": "test2@example.com",
+    "password": "$2b$10$KOMDmkL8HR.E/p2f7r3j/OB2SGbX5dIcN.Wo4kYo5QsjmI3aZK8Ry",
+    "isAdmin": true
+  },
+  {
+    "id": 3,
+    "email": "test123@gmail.com",
+    "password": "$2b$10$UIHw9Ivw0yvGygWAarKBXe6YgQphRWAiTcBjIMJMcFU3zfWZLbFGm",
+    "isAdmin": false
+  },
+  {
+    "id": 4,
+    "email": "wows@gmail.com",
+    "password": "$2b$10$hFR0YslhWwMq8Kfg5jLX4enLdzrdtT1QT3e04MIoaebDPafXAPrXC",
+    "isAdmin": true
+  },
+  {
+    "id": 5,
+    "email": "random@gmail.com",
+    "password": "$2b$10$w6QpF2c0H0iMQ91xxhcjMuG0r9JuvXSSbc3pH2wl8kXMkZRwnDRti",
+    "isAdmin": false
+  },
+  {
+    "id": 6,
+    "email": "gmailz@gmail.com",
+    "password": "$2b$10$RAXQUjV/RzW0kNXfUy77Nu1lh5p5d80rL7goQt3bji8kWSafdOugy",
+    "isAdmin": false
+  }
+]

@@ -1,0 +1,69 @@
+###
+### Retrieve a token that can be used for calls requiring authentication
+###
+
+
+### Admin log in
+POST {{protocol}}{{host}}:{{port}}/tokens
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "wows@gmail.com",
+  "password": "Testing1!"
+}
+
+> {%
+    client.global.set("admin_token", response.body.token);
+%}
+
+
+### Normal user create account (sign up/in)
+POST {{protocol}}{{host}}:{{port}}/users
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "stoptesting@gmail.com",
+  "password": "Testing1!"
+}
+
+> {%
+    client.global.set("user_token", response.body.token);
+%}
+
+
+### Bad weather tests:
+
+### Try to log in with non existent credentials  (user)
+POST http://localhost:3000/tokens
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "idonotexist@gmail.com",
+  "password": "Thispassword1!!"
+}
+
+> {%
+    client.test("No user found with that email return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}
+
+
+### Try to log in with non existent credentials (admin)
+POST http://localhost:3000/tokens
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "nosuchadmin@gmail.com",
+  "password": "Thispassword1!!"
+}
+
+> {%
+    client.test("No user found with that email return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}

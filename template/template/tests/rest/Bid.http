@@ -1,0 +1,54 @@
+### Get all bids for a specific artwork
+GET http://localhost:3000/artworks/1/bids
+Content-Type: application/json
+
+> {%
+client.test("Get all bids for an artwork successfully", function() {
+    client.assert(response.status === 200, "Expected response status to be 200");
+    client.assert(Array.isArray(response.body), "Expected body to be an array");
+});
+%}
+
+### Place a bid on an artwork
+POST http://localhost:3000/artworks/1/bids
+Content-Type: application/json
+
+{
+  "amount": 5000
+}
+
+> {%
+  client.test("Place a bid successfully", function() {
+    client.assert(response.status === 201, "Expected response status to be 201");
+    client.assert(typeof response.body === "object", "Expected body to be an object");
+    client.assert(response.body.amount === 5000, "Expected bid amount to be 5000");
+});
+%}
+
+
+### Bad Weather Tests:
+
+### Get bids for a non-existent artwork
+GET http://localhost:3000/artworks/9999/bids
+Content-Type: application/json
+
+> {%
+client.test("Bids for non-existent artwork should return 404", function() {
+client.assert(response.status === 404, "Expected response status to be 404");
+});
+%}
+
+### Place a bid with an invalid amount (e.g., negative value)
+POST http://localhost:3000/artworks/1/bids
+Content-Type: application/json
+
+{
+  "amount": -50,
+  "userId": 1
+}
+
+> {%
+client.test("Invalid bid amount should return 400", function() {
+client.assert(response.status === 400, "Expected response status to be 400");
+});
+%}

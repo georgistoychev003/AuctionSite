@@ -1,0 +1,531 @@
+### Good weather tests:
+
+### Get all artworks
+GET http://localhost:3000/artworks
+Content-Type: application/json
+
+> {%
+    client.test("Get all auctions successfully", function() {
+        client.assert(response.status === 200, "Expected response status to be 200");
+        client.assert(Array.isArray(response.body), "Expected body to be an array");
+    });
+%}
+
+### Get all artworks with a filter color of multicolor
+GET http://localhost:3000/artworks?color=multicolor
+Content-Type: application/json
+
+> {%
+    client.test("Get artworks with color filter successfully", function() {
+        client.assert(response.status === 200, "Expected response status to be 200");
+        client.assert(Array.isArray(response.body), "Expected body to be an array");
+        client.assert(response.body.some(art => art.color === "multicolor"), "Expected at least one artwork with multicolor");
+    });
+%}
+
+### Get all artworks filtered by type
+GET http://localhost:3000/artworks?type=painting
+Content-Type: application/json
+
+> {%
+    client.test("Get artworks filtered by type successfully", function() {
+        client.assert(response.status === 200, "Expected response status to be 200");
+        client.assert(Array.isArray(response.body), "Expected body to be an array");
+        client.assert(response.body.every(art => art.type === "painting"), "Expected all artworks to be of type painting");
+    });
+%}
+
+### Get all artworks filtered by price range
+GET http://localhost:3000/artworks?price=0-1000
+Content-Type: application/json
+
+> {%
+    client.test("Get artworks filtered by price range successfully", function() {
+        client.assert(response.status === 200, "Expected response status to be 200");
+        client.assert(Array.isArray(response.body), "Expected body to be an array");
+        client.assert(response.body.every(art => art.startingPrice >= 0 && art.startingPrice <= 1000), "Expected all artworks to be within the price range of 1000 to 5000");
+    });
+%}
+
+
+
+### Get specific artwork by ID
+GET http://localhost:3000/artworks/1
+Content-Type: application/json
+
+> {%
+    client.test("Get artwork by ID successfully", function() {
+        client.assert(response.status === 200, "Expected response status to be 200");
+        client.assert(typeof response.body === "object", "Expected body to be an object");
+        client.assert(response.body.id === 1, "Expected artwork ID to be 1");
+    });
+%}
+
+
+### Delete artwork when admin
+DELETE http://localhost:3000/artworks/6
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+> {%
+    client.test("Deleting artwork when being authorized and admin should return 204", function() {
+        client.assert(response.status === 204, "Expected response status to be 204");
+    });
+%}
+
+
+### Post an artwork as an admin logged in
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Portrait of musician",
+  "type": "portrait",
+  "artistName": "Leonardo Da Vinci",
+  "description": "Produced while Leonardo was in Milan, the work is painted in oils, and perhaps tempera, on a small panel of walnut wood. It is his only known male portrait painting, and the identity of its sitter has been closely debated among scholars.",
+  "authenticity": "yes",
+  "startingPrice": 25739,
+  "color": "red",
+  "image": "https://images.squarespace-cdn.com/content/v1/53d1d528e4b03aa34500543a/1414013147801-VKOB6ACD94EWQL4H1Q08/davinci-paintings-the-musician.jpg",
+  "bids": [
+
+  ]
+}
+
+> {%
+    client.test("Successful artwork posting 201", function() {
+        client.assert(response.status === 201, "Expected response status to be 201");
+    });
+%}
+
+
+
+### Post a bid as an admin on an artwork
+POST http://localhost:3000/artworks/5/bids
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "userEmail": "random@gmail.com",
+  "amount": 3000
+}
+
+> {%
+    client.test("Successful bid posting 201", function() {
+        client.assert(response.status === 201, "Expected response status to be 201");
+        client.assert(response.body.hasOwnProperty('id'), "Expected response body to have an id property");
+        client.assert(response.body.userEmail === "random@gmail.com", "Expected the user email to match the bid");
+        client.assert(response.body.amount === 3000, "Expected the bid amount to match the bid");
+    });
+%}
+
+### Get bid for an artwork as a user logged in
+
+GET http://localhost:3000/artworks/5/bids
+Authorization: Bearer {{user_token}}
+
+> {%
+    client.test("Get all bids for an artwork", function() {
+        client.assert(response.status === 200, "Expected response status to be 200");
+        client.assert(Array.isArray(response.body), "Expected the response body to be an array");
+
+        if (response.body.length > 0) {
+            client.assert(response.body[0].hasOwnProperty('userEmail'), "Expected each bid to have a 'userEmail' property");
+            client.assert(response.body[0].hasOwnProperty('amount'), "Expected each bid to have an 'amount' property");
+        }
+    });
+%}
+
+### Edit an artwork as an admin logged in
+PUT http://localhost:3000/artworks/3
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "id": 3,
+  "name": "Updated name",
+  "type": "landscape",
+  "artistName": "Salvador Dali",
+  "description": "One of Salvador Dali's most iconic works, the painting is known for its melting clocks and dreamlike atmosphere, which explore ideas of time and the subconscious mind.",
+  "authenticity": "no",
+  "startingPrice": 12,
+  "image": "data:image/jpeg;base64,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",
+  "color": "grey",
+  "bids": [
+
+  ]
+}
+
+> {%
+    client.test("Successfully editted artwork 200", function() {
+        client.assert(response.status === 200, "Expected response status to be 200");
+    });
+%}
+
+
+### Delete a bid on an artwork as an admin
+DELETE http://localhost:3000/artworks/1/bids/1
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+> {%
+    client.test("Deleting artwork when being authorized and admin should return 204", function() {
+        client.assert(response.status === 204, "Expected response status to be 204");
+    });
+%}
+
+
+###Test for getting won auctions by a user
+GET http://localhost:3000/artworks/won/random@gmail.com
+Authorization: Bearer {{user_token}}
+
+> {%
+ client.test("Get won auctions by a user", function() {
+ client.assert(response.status === 200, "Expected response status to be 200");
+ client.assert(Array.isArray(response.body), "Expected body to be an array of won artworks");
+ response.body.forEach(auction => {
+ client.assert(auction.hasOwnProperty('highestBid'), "Expected each won auction to have a 'highestBid' property");
+});
+});
+%}
+
+### Bad Weather tests:
+
+### Try to get a non-existent artwork by ID
+GET http://localhost:3000/artworks/9999
+Content-Type: application/json
+
+> {%
+    client.test("Non-existent artwork should return 404", function() {
+        client.assert(response.status === 404, "Expected response status to be 404");
+    });
+%}
+
+
+
+### Try to delete an artwork when not an admin
+
+DELETE http://localhost:3000/artworks/2
+Content-Type: application/json
+
+
+> {%
+    client.test("Deleting artwork without being authorized and admin should return 401", function() {
+        client.assert(response.status === 401, "Expected response status to be 401");
+    });
+%}
+
+
+### try to get all artworks with a non existent and not valid type
+
+GET http://localhost:3000/artworks?type=invalidType
+Content-Type: application/json
+
+> {%
+    client.test("Filtering artworks by invalid type should return artworks without any filter", function() {
+        client.assert(response.status === 200, "Expected response status to be 200");
+        client.assert(Array.isArray(response.body), "Expected body to be an array");
+    });
+%}
+
+### Try to edit an artwork with a negative starting price
+PUT http://localhost:3000/artworks/3
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "id": 3,
+  "name": "Updated name",
+  "type": "landscape",
+  "artistName": "Salvador Dali",
+  "description": "One of Salvador Dali's most iconic works, the painting is known for its melting clocks and dreamlike atmosphere, which explore ideas of time and the subconscious mind.",
+  "authenticity": "no",
+  "startingPrice": -50,
+  "image": "data:image/jpeg;base64,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",
+  "color": "grey",
+  "bids": []
+}
+
+> {%
+    client.test("Editing artwork with a negative starting price should return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+        client.assert(response.body.message === 'Price must be a positive number.', "Expected message to be 'Price must be a positive number.'");
+    });
+%}
+
+
+### Try to post an artwork without being an admin
+POST http://localhost:3000/artworks
+Content-Type: application/json
+
+
+{
+
+  "name": "Web Advanced",
+  "type": "landscape",
+  "artistName": "Georgi Web",
+  "description": "Artwork done for web advanced",
+  "authenticity": "yes",
+  "startingPrice": 100,
+  "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys/RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N//AABEIAJgAyAMBIgACEQEDEQH/xAAcAAABBQEBAQAAAAAAAAAAAAAAAQIDBQYEBwj/xABBEAABAwIEAgcFBgQEBwEAAAABAAIDBBEFEiExBkETIlFhcYGRFDJSobEHI0JiwdEVM3KCQ1OS4TQ1g5OiwvAk/8QAGQEAAgMBAAAAAAAAAAAAAAAAAAIBAwQF/8QAJREAAgIBBAIDAAMBAAAAAAAAAAECAxEEEhMhMUEUIlEjMmFS/9oADAMBAAIRAxEAPwCb+DSj8QSfw1zd338FsBRvtZzCUx2FPebiNdFWfpicWZQUVu0rphpgOzRXFdhVTDSTS08bDM1hLA82BI2BKh4Mpq3EKd8uMQxtztD4mNblLBcjXXnuh6mC6JVMn2cojaPwjyShnYFsBhdONognDD4BtEEfJiHCzH9G74T6J3QSHk70WxbSxt92Nvonimb8I9FHyohwsxns8nNrj5JPZnn8DvRbboG/AEopRyYFK1USOBmJNM4bs+SBTm+jHei23sjObB6JRSR8mBT8uIcDMW2lcfwO9E5tFJf+W70W09lZ8IQKdgPuI+XEOBmM9hl5wlNdRvH+CVtzA2/uppp2n8KPlRJ4GYc0r/gcPJN9jJ/wytx7Kz4U32RnwBT8pCuhmHNF+Q+iaaS2zD6LcGlZ8ATfZI7/AMsI+SiOAxHs9v8ADPomOhvs0rcmjj/ywmOpGfA30UPVIngZhzT33aVE6kB/AfRbl1FEd2D0UT6SMHRgVb1SGVLMHUUTQD1XIWxqaSINPUCFW9Sh+E0pjaNbJHBoGyc86qGQrku+Ru40VXFc3QcPV8jRqIiBbtOifgDhlePhiiHl1kziSHp8DrY+ZiJUXDMvSsD+ckDHG3y+pVTtbaYyh0X2ZF/BJZPay/JNvkRtQjdTZRU1RHUF/Q3cxht0gHVcewdqrK/EKR+JGjlmaaeKMGcM613E6NdblYXI7x5zScQ4FSRAyV8DWN2G1kvJMnai0GiW65MMxWgxWIy0Uwe0c+RHaO0d6mrKqGjppJ39YRg3a3cnsTrlZGYk2Y9yRzz3LjpcUhqqaKeOGYB7b5RGXW7tFKaotbnNHU27mXPpukcpk9E4eUuY9ycGCwsOXNGVRvmGEILnsS6pbIsp5JkYQiXKjLpmJsO1cU+LUUUMkrZw9rL3sdNN9dkcsl5I2r0dhYE0tAKqajHDkY6mEfWIOaTUW8lS4jxEyzhJWSENBzMp77f26+arer/B1SzXHNsG38lAZI5DljexxG4ab2WBpsepsUPsdFSyTtA59VthYXJJ79Vc01H0NPG1lKyCKW2VjRyNzqNNT+qmV0kssONZNE4jkFy1U8MFumljiJ2zvDb+qz1YypoIKqSnm6J8cXVaw5WvdbmPFNw/D6WgoKcvbI6pLc0stQLPzE3PkNvAKp6t7XIfgWTvq8Rowy5qoQDzzJFQYm59TkiLWNhfG57Tu7cBtx53+SE0dV/10DoXo9LcwclG+PsF152ekbtI/wBUCWZh/mSf6l2vhRMHyTXcTXhwOrflPua+Cy/CeMU2HUNDUVzy2GSDoy+xNiCq7HKqaPBKyR8kha1o587qTh7Am4hh9JDIfuqWNj3E65nOF9Fms06jLBbC3Mcs1kvGWFlwjwyCrxCdxs1sEdmk/wBTrBOFJxDjjQyse3CaJ3vQwOzTPHZn/D5LN1MRw6Y+yyOY5o95p1UtNxHidMwyz1LRTtNs8jLnwFtz3LR8bCy2V82XhI3eG4Lh+G04hpKVjIx+W5d3knUleX/aHE6XierhY5zGxxx2Yw2G2v1V9Q8e0z3tnqa2GHQjoHi58TbS6pcarIMZx9tbTPZKyeDo3ZL6OYdte4hZI2Vym4JGhwlFbmO+zmWaKlqo+cbvxdgLbj/zWmqKu8dYZiei0LhvplCoOE4zDPWxtFiS4nwvHqrKuq/ZaKtkmZlDpDHHzzdULo1pbDLPO40nBhc/ByHfhnkaL/1K/EYWC4d4xwLCMJhpayuaKgEvkAaTZzje23erZv2g8OO2xBg8QQsz2tlqykafo2pDG1UUXGOCzfya2J3mp28SYe7aeP8A1BRtj/gZZbdG1I9rWtJ1010VQ7ivBo9JK+Fp8U6DijA6g2jxSlJ7C+31UbYonsynFXEVbJI6mhihhgvlJMwzPJ2FrqDDK2kdhbYZahlLNE3IIOic86X1PxEnVajH6XBOIMPfSTVMPWFxIwi4PLVUEfDtDQQCOlqmkNGjcrC4997a+ax3OpeS6Ckcc2H4ZUOZU4hib3xMZmkgZL1S7fW2v9oPqq6tmbjFP0WFR5KXRuSOPogeYGtlLiWCx1PWMDSRoMsYaT36HdV0bsdgma2bCPaYoj1HBzGOFtuf6LK7K3H+NlyjLP2NRw9Sx4bhkVO9gaZOtNZoB13bfsAsFZyVfSSiRwAseqPpZcAqoWwMmqwIQ5ou0/hJ5aILmODXNvZwu3XkVzZ3Tl5NUaoohqZDPiVGw69Z0xB55Rpf+4j0XNi1Y5kjWEAh78huDv8A7usFNIyzqg9MYnSRhjZmEFzBfUC6rqomkq6epiiZN0PVN+dzq63aBfRX0KEsbmLYpr+qHNinMtZ07W/cyhgDd3Wvr639EJrp6bLM6rm6Rzn5hqSB5bd/mhX2V1N9FUeRLtGRdx9Pf/llJ/rf+6UcfVIBthNH4lzz+qzBAvsEjiBbrHQ35Lvc0/0xcEfwvsT4prMdohQSU9PTxSSsH3IN3E+J2WqruIsRwKZ0GGYfHVMlaBI5+azcugAI8Ssfw5TNruIKNrmgNEhnkA2AGug9Fqp3vlg6SUe/c+pWbUXuDTHqqUntOF/EuL1EnSOwSiLt+vM4f+yhxWulrZAC4MjaLWZoB3DsHadyuWW7ZH3Nh2kKF0l9yD3qud1li7NEKIVvokhiYwXDGgHYkXCsKGqihkEVQ8su4PZKG3yvFwNOYOo81TvrWhobmdYctwVzzVhdoXXaNiNEsFJSyPPa44PSMMraNldGWTjp6iOxYAcoBsRr23aNNxddXFDA+GnhZtK4vd3tA1XmT8Zqn9CHzPcyEWjaT7q0LeJaWelE9XUPNS2mdHkLCc0hsA6420Fz337VvVr2NGB0/ZMgNBC4vflJeSS4u53T2RsaLNaxtueULkpsQEurjbtsuqSoiaRlcTft0XJe9eTpKKx0Oc4jS9/AKJ5vuCpRYjXxumkA6kpcsjYcz4mO3be6gfTxndtvFdz8thqLqB7h2pk2Rg58ssf8md7O4E2UT5q0jWpeQPzlTvcO0KEyR9vzTpf4BEaitG1Q/wAnIFfXs1FXMCNuuU18sd+ahdKw7EqxRT8oje/06v4ziVwDWy7dqV2MV1rOqnlV75m9qhfIDzUqqL9ByteyyOMVw2qCR+YBNdj1f/nW8lUOlA5qN0o5EqxUQ/BXqJfpazYzVu3ePRCpnyIT8Ufwrd8v075KWpabGCTyCjdS1Iu408uVouXZDYDvV+3iCldoYngeN101E9ViODtjo42wwVJ/nSzWzNDtg0a2uFUrbM9xwWTrrS+rE4GbHBDVV0v8yQdBH3XFyuuear6INEMrmuFxlbtdMw2hjoMKnpZZ43ySHP1GnLe1rXICmEz7e7l/KHbKm+eZdE6erCeSknjqw4n2Wd39hK4ZYq8nq0dRbuYVqDO8fjt3XTmVMh2ulV7XoudOfZjX01eT/wAFUf8AbKb7FiLtqKqP/Rd+y3bZ5LbGyZiuMuw/CiYn2qJjkiPZ2u8h+iaOqk3tUSuWn2rLZ5+HO56Ia9wO6bI7ruA2zFNJ0st3oyM7Y6lzSLldkdeDYE6jmqcFLc3SyrTHjY0aIYkSA3S3cnfxFwttZZ9sjhtdOMrjv9VXwoblZePrQ517jxvZQT1Vjo+47iqgSna6dDT1FW53QxveIxdzh7rfE/opVKQrtZ0yVfeVEavRXs3BePPoY6uKnbUxuZm+6eC4dxCzFRDJTyuiqI3xyN3Y5tiE6ghHJkj6oqL2k66qFNKbahdzJzMSFGXm+hUaEySIyx5emlyaUBSAOKEh2Qgg3zaKlzC0Md/6V0OsLhoyg6aaJcpaNPVRdfa3zXHbb8s7m1LwjoZG17S3NqG3AXdQ4UyZzpJZbQtfkFnDrPG9j2bLJT0tfTVEuINqmBzQbAi+nYtRwriED6JtHXOymfNLSTF1g9x95t/iDr6c9FdXTFyW6XRjuvnFPCO6ppKWljL+ggDA0kveS4i3iuaOjEmSSnMbmO3OxbzXRWUkks8kMtBUvjdYmRzxY2N9l0Mc6GMNZQvDBsG5R+q7kNDp8dLo4s9Ve/fZx+xyQg52slaDvl1A8rH6rPcc4dJBW0VUM/s0jTFlcdYZGm7m+ehut9w26Wpxe01GY6cRktdIRq4HuKp/tHbGaKRo1Ht0TmHxY8H6BY9Tp6q57oLBpousl1JnldUMtRI22zyorqauuK6cdkhXPuheCx+RwKc0km1iSexMCvuFMFxHFa+N1FQGphF80j+rG3vzfspFyckOE1TwbvgiPwyS2P0Nl0U3DGNVlTFBS0EshmdlY9rm5Dpc9a9tl6ZLwlxLTdLNhuMwxjO5zKMMGQD4dRr5hW3C3FElXKcLxxoo6+BuV0VgGycw5v7JtqF3M8/l4AmwmanONNfJA5w6Y00ouwd4tt3g3V7jdFTUNA2moYY4oG6tDNiO2/PxW6qKiGvpqulqs0Zb1HOdp0jSAQW92tlg60h9K1gNwAW69x1+d0WRxHIVyy8Gk4MrBNhZjc7rMPJduL4bhuLRdHiVHDUtHxjUeB3CxPCFa+iqagWJiAu9zjYN17Su3EeMWte5tPC2TLcdWVhv81Tl4LZLsq8X+zfDc73YfXVEDf8ALks8DwO/rdZyq4IkhLv/ANzCN7iP/dWWJcY1hv0cBZrzc0/qsxXY/XVROeew7ALKVuZDSIavCWU1w6rDrdjR+6rXNDTo66lmqpJfeN1AXaphQcmpboTEAdkJHbIQB6UY273NuV0OjBAygJa6op6KIvqXhtthvfwVW+trZ2CSKNlLAfdfILvf4NXGipPtHebWcLyWzYczS0i7To5Uz8Pq8Njk9iMdRRyOu+nmF2nvtyPeNU+KOonjeZaqpLbZXZQ0WJ5dydhWGto5TLUymam91zZNHNF7bd/I9yeP8eexJ1OeOhlLxLUUTcsclbStvqx5FRGPAOs4epVxQcYPnkax4oqobnKHQvcBvYEWJ7rrKcQRsoMWmgpX5oQA5l3ZhYi91BQxPE9NVuaA104YOV+2y2Re2O6LwcyyuOWmsnvVNLS9JQNpwSKiJ7mHL+G19+W4WN+0ChfHTwxxuvDFUR3uNfdcAfot5g0EbcNorG5jhAHcLLOcaPbPhdW8jI4dGPAiZv6XVt0m6VKXkooSVuF4PEsT0xCpHMSu+q5guzGtMXrLCw6Z31XDdNB5ihpf2ZvPs14cpcTrm1GIRNmjaC9sbxdtr2uRz1BXs7RHTwENyxxRt2AsAAvPfsyLW11ZCLWp4Io2676a/MreSNFbQSxF2XpWOZfsvomz0L7OPDMR6dvUOg3ceaix3A6PHYwXjoatg+6nb7zVSYMypwwmgriGyQaF3J45OHj8looKqJgPSOAtzvqqYzw+x5QTMFXz8T0lczBa2rbUxvYXMnvkIaNNTuN+3mpqtrHQMbANIwY7gWBym17Lu4yEWNuibSSGA0bjJLXOFmMbbUEndULOJsGAbTRYiDlFnSzUrwx57bg3+SulLdESCxIz/GzXUcFDC13VnL5Ht+ItygX7feWWlIe4v+L5LTcdYtRYg+ihoZY5hCxxkkjDst3EaAkC+g+aym17c1EfBMnlgQgpEFMQJqhCOaCAQhIgBXbISO2QgDV0rJKyoFbVEue+RzYGu2aAdXW230HeO5dkkL44vvizpmPzGwN2g3y8yD/92qTDoopmwZznjaC1wA/Mbj1VuwFzDnex0egY0DRu3rYhcuyzbLHo79dLdSftlTDE+eKNznmMR3cXc77EW57E93LsVljUZpsHqDK8GJ9I5gLgM5fbQ+vz8FHBnhjLi17pGuyNJ10sBcDvtdUHFOKsmf7FSFvRtcXSubtmvsEsU7bFgSeKam2UdDTS11XDTRXMkrrC/wAz6arVcQ07KKhpI6RgvSPa4OPMjt80cIUIpaN+Iyt+9lBbFfkzmfP6eKsa1gqaV+cXDgbqy27NqS8IyU05g2/Z6HwVXx4jw7BUMeDlY2Ii98uUbH1VBxhXmab2UDqufmI7mkgfMOKq/sprpKakxOAML42vjkAHIdYOPldvqm4vO2bEZHuBAjbY+RJPzJT6qf0jBFOlrxY2/R5zjbs2L1dtuld9Vw3t49vYpq2cVNZNOBbpJC75qG2i2QX1Rnn/AGZt+CMeZR47nldlhqmgHueB+69Zw2qa14hdLmLtQTt68/8AdfOlNP0D9WB7CdWn6g8ittw5xsaRkMM0Zlaw9oD/ANiUsov0CaN1x3XsoqjDpWuAlkL23Pwi30NvVUOKY/Hg9LA6RprJKnMGNc85Y7AanUX3Gl1eT0WG8UU0Fb00dWYQTGzbKTyePEbLLY2J249NQzU9DJCYmSUsb2MY1rCLG3fmade5VyS8sZS9IyvEHE2I4swQT1Lm0zTcU8QDY/QanzJWfuR5rR8Q0oyn2pscM8UZtIHhxf2Nd2nkCsySrYPKEfTFv2oumoVhAt0FJzSoIBHNF0c0ACEJEADtkIfshAF/HisuHVE0UXXidKXOjd2g20K7peKWhrBBQ5bbtL9/l+iz1Sc1RIfzu+qhIVMqISeWjVXrLq1ti+i0xDHq2vYYy8RRH8DP1O6hwXD/AOIV0UBv0Q60hHJo38+S4WjVbPhymbQYeJHtvNU2J7m8h+vmktaph9URDffZmTyXUhDQI2tysAtbs7kr2NEAa/RxFgFDnDYSc3O5KZVVWlwBtvfmuWots6fS6OLC2TYXXulBIYTmblJGvly2UfEFY6PDJ3ZiJJnZb+J1+V/VL7QJTvp2qg4gq+lnbTs9yPfxK111uc02U2yVcG17Kco1TkWXSOUMtdFtErgUIAsKDGKygnZPA60zNpAbOt39vmuriXiKfHvZZKgBskLXhxYLNdcjl5D1VMBcJCl2oMiFzrWubJqflQWpgIzdLZKQlsggYUWTrJLWQAIQlQAiEqTmgBH7IQ/ZCkDpmv0z/wCophQhQB34LRe11YDx90zrP/Za+eVvSs12Qhc7UNuzB09NFKvKOKrr8otfTV1ie/RV81XJKCCbNPYhCshCOBZzecCtl6CNzzfQXCoXudK9z3e843SoV9SXbM2ok+kMtZLZCFcZwsm2SIQAoRZCEALbRBahCAEISWQhADbapCEIQAiCEqEAIgboQgBsg0QhCkD/2Q==",
+  "color": "red",
+  "bids": []
+}
+
+> {%
+    client.test("Posting an artwork when unauthorized as an admin should return 401", function() {
+        client.assert(response.status === 401, "Expected response status to be 401");
+    });
+%}
+
+
+### Try to post a bid on an artwork as a user without being logged in
+POST http://localhost:3000/artworks/5/bids
+Content-Type: application/json
+
+
+{
+  "userEmail": "random@gmail.com",
+  "amount": 5000
+}
+
+> {%
+    client.test("Posting a bid on an artwork when not logged in as a user should return 401", function() {
+        client.assert(response.status === 401, "Expected response status to be 401");
+    });
+%}
+
+### Try to post a bid on an artwork with a bid lower than the last bid
+POST http://localhost:3000/artworks/1/bids
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+"userEmail": "random@gmail.com",
+"amount": 100
+}
+
+> {%
+client.test("Adding a bid lower than the last bid should return 400", function() {
+client.assert(response.status === 400, "Expected response status to be 400");
+client.assert(response.body.message === 'Bid must be higher than the last bid.', "Expected error message for low bid");
+});
+%}
+
+
+###Try to post a bid on an artwork after the auction has ended ( i made artwork with id 11 to be have end time finished so i can do this test)
+POST http://localhost:3000/artworks/11/bids
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+"userEmail": "random@gmail.com",
+"amount": 10000
+}
+
+> {%
+client.test("Adding a bid after the auction has ended should return 400", function() {
+client.assert(response.status === 400, "Expected response status to be 400");
+client.assert(response.body.message === 'Auction has ended.', "Expected error message for bidding after auction end");
+});
+%}
+
+### Try to delete a bid on an artwork when not authorized
+DELETE http://localhost:3000/artworks/1/bids/2
+Content-Type: application/json
+
+
+> {%
+    client.test("Deleting a bid on an artwork when not logged in as an admin should return 401", function() {
+        client.assert(response.status === 401, "Expected response status to be 401");
+    });
+%}
+
+
+### Try to get bid for an artwork when not authorized/logged in
+
+GET http://localhost:3000/artworks/2/bids
+Content-Type: application/json
+
+
+> {%
+    client.test("Getting a bid on an artwork when not authorized should return 401", function() {
+        client.assert(response.status === 401, "Expected response status to be 401");
+    });
+%}
+
+### Try to post an artwork with invalid color ( i have a predefined list pf allowed colors)
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+"name": "Georgi Stoychev",
+"type": "landscape",
+"artistName": "The Rock",
+"description": "A beautiful landscape scenary",
+"authenticity": "yes",
+"startingPrice": 500,
+"color": "rainbow",
+"image": "https://www.google.com/"
+}
+
+> {%
+client.test("Posting an artwork with invalid color should return 400", function() {
+client.assert(response.status === 400, "Expected response status to be 400");
+});
+%}
+
+### Trying to post an artwork with a starting price as a string instead of a number
+
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Test with string",
+  "type": "digital art",
+  "artistName": "Brad Piot",
+  "description": "A generative art by Brad Pit",
+  "authenticity": "yes",
+  "startingPrice": "five thousand",
+  "color": "multicolor",
+  "image": "https://www.google.com/"
+}
+
+> {%
+    client.test("Posting artwork with starting price as string should return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}
+
+### Trying to post an artwork with a type that is not within the predefined list of allowed types
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Test with string",
+  "type": "photography",
+  "artistName": "Brad Piot",
+  "description": "A generative art by Brad Pit",
+  "authenticity": "no",
+  "startingPrice": 5000,
+  "color": "black",
+  "image": "https://www.google.com/"
+}
+
+> {%
+    client.test("Posting artwork with invalid type should return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}
+
+### Trying to post an artwork with a missing required field (artistName)
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "The not allowed",
+  "type": "landscape",
+  "description": "A landscape that is cool",
+  "authenticity": "yes",
+  "startingPrice": 1234,
+  "color": "red"
+}
+
+> {%
+    client.test("Posting artwork with missing required field should return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}
+
+
+### Trying to post an artwork with an empty name field
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "",
+  "type": "portrait",
+  "artistName": "Georgi Stoychevb",
+  "description": "A unique contemporary portrait",
+  "authenticity": "yes",
+  "startingPrice": 321,
+  "color": "gold"
+}
+
+> {%
+    client.test("Posting an artwork with empty name should return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}
+
+
+### Trying to post an artwork with an invalid color field ( not within the predefined list of allowed colors)
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Ocean Dream",
+  "type": "painting",
+  "artistName": "Georgi St",
+  "description": "A lucid painting f an ocean",
+  "authenticity": "no",
+  "startingPrice": 82,
+  "color": "nosuchColor"
+}
+
+> {%
+    client.test("Posting artwork with invalid color should return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}
+
+
+### Trying to post an artwork with a description that is too short and below the required minimum of 4 letters
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Ocean Dream",
+  "type": "painting",
+  "artistName": "Georgi St",
+  "description": "A",
+  "authenticity": "no",
+  "startingPrice": 82,
+  "color": "nosuchColor"
+}
+
+> {%
+    client.test("Posting artwork with an invalid description should return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}
+
+
+### Trying to post an artwork with an extremely high starting price to test the limits
+POST http://localhost:3000/artworks
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "name": "Ocean Dream",
+  "type": "painting",
+  "artistName": "Georgi St",
+  "description": "A lucid painting f an ocean",
+  "authenticity": "no",
+  "startingPrice": 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999,
+  "color": "nosuchColor"
+}
+
+> {%
+    client.test("Posting artwork with an extremely big starting price should return 400", function() {
+        client.assert(response.status === 400, "Expected response status to be 400");
+    });
+%}
